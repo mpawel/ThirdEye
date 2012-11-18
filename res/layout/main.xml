@@ -4,20 +4,46 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
-<View android:id="@+id/clickme"
-android:layout_width="fill_parent"
-android:layout_height="200px">
-</View>
-<Button android:id="@+id/trySpeak"
-        android:layout_width="wrap_content"
-        android:onClick="speakButtonClicked"
-        android:layout_height="wrap_content"
-        android:text="Try Speak!" />
-<Button android:id="@+id/tryPhoto"
-        android:layout_width="wrap_content"
-        android:onClick="speakButtonClicked"
-        android:layout_height="wrap_content"
-        android:text="Capture Photo!" />
+<ImageView 
+    android:layout_width="fill_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:src="@drawable/icon"
+     android:id="@+id/mainImgView"
+     android:contentDescription="@string/hello"
+     android:layout_gravity="top"
+     />
 
+
+<TextView android:id="@+id/name"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:text="@string/none_selected"
+    />
+<LinearLayout
+     android:orientation="horizontal"
+     android:layout_width="fill_parent" android:layout_height="wrap_content"
+     android:gravity="center"
+     android:padding="5dp">
+    
+	<Button android:id="@+id/chooseItem"
+    	    android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="left"
+    	    android:text="@string/choose_item" />
+	<Button android:id="@+id/searchItem"
+    	    android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="center"
+    	    android:text="@string/search"
+    	    android:enabled="false" />
+	<Button android:id="@+id/cameraPreview"
+    	    android:layout_width="wrap_content"
+        	android:layout_height="wrap_content"
+        	android:layout_gravity="right"
+        	android:text="@string/add_new" />
+	
+</LinearLayout>
 
 </LinearLayout>

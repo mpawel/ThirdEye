@@ -2,4 +2,10 @@
 <resources>
     <string name="hello">Hello World, AndroidLearnerActivity!</string>
     <string name="app_name">AndroidLearner</string>
+    <string name="none_selected">none</string>
+    <string name="choose_item">choose item</string>
+    <string name="search">search</string>
+    <string name="add_new">add</string>
+    <string name="voice_recog_button">call it</string>
+    <string name="add_ask">Is that what you want to remember?</string>
 </resources>
