@@ -76,8 +76,11 @@ public class AndroidLearnerActivity extends Activity implements SensorEventListe
 		case VOICE_CHOOSER :
 			if ( resultCode == RESULT_OK )
 			{
-				mItemName.setText((String) data.getExtras().get("item_name"));
-				mSearchButt.setEnabled(true);
+				if (data != null && data.getExtras().get("item_name") != null ) {
+					mItemName.setText((String) data.getExtras().get("item_name"));
+					mSearchButt.setEnabled(true);
+				}
+				
 				
 				//TODO add loading image connected with recognized name
 				
@@ -91,7 +94,8 @@ public class AndroidLearnerActivity extends Activity implements SensorEventListe
 			
 			break;
 		case ADD_NEW :
-			mitemView.setImageBitmap((Bitmap) data.getParcelableExtra("new_item_image"));
+			if (data != null && data.getParcelableExtra("new_item_image") != null )
+				mitemView.setImageBitmap((Bitmap) data.getParcelableExtra("new_item_image"));
 			
 			break;
 		case SEARCH :
