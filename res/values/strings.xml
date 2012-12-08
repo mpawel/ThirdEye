@@ -10,4 +10,5 @@
     <string name="add_ask">Is that what you want to remember?</string>
     <string name="add_item_menu_ok">save</string>
     <string name="add_item_menu_abort">abort</string>
+    <string name="loading_object">loading object...</string>
 </resources>

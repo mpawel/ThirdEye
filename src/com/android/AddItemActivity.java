@@ -1,5 +1,6 @@
 package com.android;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -11,6 +12,7 @@ import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
@@ -35,10 +37,12 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 public class AddItemActivity extends Activity implements OnTouchListener, CvCameraViewListener {
 
 	private static final String TAG = "OCVSample::Activity";
+	
 
 	private Mat mRgba;
 	private Scalar mBlobColorRgba;
@@ -81,6 +85,8 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 
 		mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
 		mOpenCvCameraView.setCvCameraViewListener(this);
+		
+		
 		super.onCreate(savedInstanceState);
 	}
 
@@ -186,11 +192,14 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 					//create descriptor
 					//add to descriptors list
 					MatOfPoint contour = contours.get(0);
-					Point[] cl = contour.toArray();
+					
 					
 					int[] rh = new int[256];
 					int[] gh = new int[256];
 					int[] bh = new int[256];
+					
+				
+					
 					for (int i=0; i<subimg.width(); ++i) {
 						for(int j=0; j<subimg.height(); ++j) {
 							rh[((int)Math.floor(subimg.get(j, i)[0]))]++;
@@ -198,22 +207,21 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 							bh[((int)Math.floor(subimg.get(j, i)[2]))]++;
 						}
 					}
-					String rhist = "", ghist = "", bhist = "";
-					
-					for ( int i=0; i<rh.length; ++i) {
-						rhist += rh[i] + ( i< rh.length-1 ? ", " : "\n"  );
-						ghist += gh[i] + ( i< gh.length-1 ? ", " : "\n"  );
-						bhist += bh[i] + ( i< bh.length-1 ? ", " : "\n"  );
-					}
 					
 					
-					Object[] desc = new Object[6];
-					desc[0] = cl;
-					desc[1] = rh;
-					desc[2] = gh;
-					desc[3] = bh;
-					desc[4] = blobRgba;
-					desc[5] = bmp;
+					Descriptor desc = new Descriptor();
+					desc.contour = contour;
+					desc.rh = rh;
+					desc.gh = gh;
+					desc.bh = bh;
+					desc.rgba = blobRgba;
+					desc.img = bmp;
+					
+
+					DescriptorDataset.normalizaHistogram(desc.rh);
+					DescriptorDataset.normalizaHistogram(desc.gh);
+					DescriptorDataset.normalizaHistogram(desc.bh);
+					
 					
 					DescriptorHandler.descriptors.add(desc);
 					
@@ -281,21 +289,55 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 		switch (item.getItemId()) {
 		case R.id.menu_save:
 			// ask for name - run voice for result
-			// send descriptor, sample image, and name
-//			Intent i = new Intent(getBaseContext(), AndroidLearnerActivity.class);
-//
-//			i.putExtra("new_item_image", bmp);
-//
-//			setResult(RESULT_OK, i);
-//			finish();
+			Intent i = new Intent(getApplicationContext(), VoiceRecognition.class);
+			startActivityForResult(i, AndroidLearnerActivity.VOICE_CHOOSER);
 
 			return true;
 		case R.id.menu_abort:
 			// return empty result
+			finish();
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
 	}
+	
+	
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		switch(requestCode)
+		{
+		case AndroidLearnerActivity.VOICE_CHOOSER :
+			if ( resultCode == RESULT_OK )
+			{
+				if (data != null && data.getExtras().get("item_name") != null ) {
+					String name = (String) data.getExtras().get("item_name");
+					for ( Descriptor d : DescriptorHandler.descriptors) {
+						d.name = name;
+					}
+					
+					//add to database
+					
+				}
+				else
+				{
+					Toast.makeText(this, R.string.none_selected, Toast.LENGTH_SHORT).show();
+				} 
+
+			}
+			else
+			{
+				Toast.makeText(this, R.string.none_selected, Toast.LENGTH_SHORT).show();
+			}
+				
+			
+			
+		default : break;
+			
+		}
+		super.onActivityResult(requestCode, resultCode, data);
+	}
+	
 
 }

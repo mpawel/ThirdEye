@@ -28,7 +28,7 @@ import android.view.View.OnLongClickListener;
 import android.view.View.OnTouchListener;
 import android.widget.Toast;
 
-public class ColorBlobMatchActivity  extends Activity implements OnTouchListener, OnLongClickListener, CvCameraViewListener {
+public class MatchItemActivity  extends Activity implements OnTouchListener, OnLongClickListener, CvCameraViewListener {
     private static final String  TAG              = "OCVSample::Activity";
 
     private boolean              mIsColorSelected = false;
@@ -50,7 +50,7 @@ public class ColorBlobMatchActivity  extends Activity implements OnTouchListener
                 {
                     Log.i(TAG, "OpenCV loaded successfully");
                     mOpenCvCameraView.enableView();
-                    mOpenCvCameraView.setOnTouchListener(ColorBlobMatchActivity.this);
+                    mOpenCvCameraView.setOnTouchListener(MatchItemActivity.this);
                 } break;
                 default:
                 {
@@ -60,7 +60,7 @@ public class ColorBlobMatchActivity  extends Activity implements OnTouchListener
         }
     };
 
-    public ColorBlobMatchActivity() {
+    public MatchItemActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
     }
 

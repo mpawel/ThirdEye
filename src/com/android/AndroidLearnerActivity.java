@@ -1,6 +1,7 @@
 package com.android;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.Sensor;
@@ -77,12 +78,23 @@ public class AndroidLearnerActivity extends Activity implements SensorEventListe
 			if ( resultCode == RESULT_OK )
 			{
 				if (data != null && data.getExtras().get("item_name") != null ) {
-					mItemName.setText((String) data.getExtras().get("item_name"));
+					
+					String name = (String) data.getExtras().get("item_name");
+					mItemName.setText(name);
 					mSearchButt.setEnabled(true);
+					
+					
+					ProgressDialog progress = ProgressDialog.show(mThis, "",  mThis.getString(R.string.loading_object));
+					
+					DescriptorHandler.get(name);
+					
+					progress.dismiss();
+					
+					DescriptorDataset.training = DescriptorHandler.descriptors;
+					
+					mitemView.setImageBitmap((Bitmap)DescriptorDataset.training.get(0).img);
+					
 				}
-				
-				
-				//TODO add loading image connected with recognized name
 				
 			}
 			else
@@ -94,8 +106,8 @@ public class AndroidLearnerActivity extends Activity implements SensorEventListe
 			
 			break;
 		case ADD_NEW :
-			if (data != null && data.getParcelableExtra("new_item_image") != null )
-				mitemView.setImageBitmap((Bitmap) data.getParcelableExtra("new_item_image"));
+			
+			mitemView.setImageBitmap((Bitmap)DescriptorHandler.descriptors.get(0).img);
 			
 			break;
 		case SEARCH :
