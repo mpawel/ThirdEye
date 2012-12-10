@@ -37,7 +37,7 @@ public class ColorBlobMatcher {
     Mat mDilatedMask = new Mat();
     Mat mHierarchy = new Mat();
 	public static  double SHAPE_DIFF_THRESHOLD = 0.2d;
-	public static double DESC_DIFF_THRESHOLD = (3.0d*255.0d*256.0d)*0.05d;
+	public static double DESC_DIFF_THRESHOLD = (3.0d*DescriptorDataset.NORMALIZATION_MAX*(double)DescriptorHandler.HISTOGRAM_BINS)*0.05d;
 	
 
     public void setColorRadius(Scalar radius) {
@@ -87,7 +87,7 @@ public class ColorBlobMatcher {
 
         mContours.clear();
         
-    	Log.d(ColorBlobMatcher.class.getSimpleName(), "contours:"+contours.size());
+//    	Log.d(ColorBlobMatcher.class.getSimpleName(), "contours:"+contours.size());
         
         while (each.hasNext())
         {
@@ -104,10 +104,13 @@ public class ColorBlobMatcher {
 //        	for (int i = 0; i < blobColorHsv.val.length; i++)
 //        		blobColorHsv.val[i] /= pointCount;
             	
+            
+            double maxArea = rgbaImage.width()*rgbaImage.height();
+            
         	Descriptor a = DescriptorHandler.createDescriptor(subimg, contour, null);
 
             double area = Imgproc.contourArea(contour);
-            if ( area > rgbaImage.width()*rgbaImage.height()*0.01 &&  area < rgbaImage.width()*rgbaImage.height()*0.8 )
+            if ( area > maxArea*0.01 &&  area < maxArea*0.8 )
             {
                 for ( Descriptor d : DescriptorDataset.training)
                 {
@@ -115,11 +118,11 @@ public class ColorBlobMatcher {
                 	
                 	if ( match < SHAPE_DIFF_THRESHOLD  )
                 	{
-                		Log.d(ColorBlobMatcher.class.getSimpleName(), "contourMatch:"+match);
+//                		Log.d(ColorBlobMatcher.class.getSimpleName(), "contourMatch:"+match);
                 		
                     	double dist = DescriptorDataset.getMinDist(a);
                     	
-                    	Log.d(ColorBlobMatcher.class.getSimpleName(), "Descriptor diff: "+dist);
+//                    	Log.d(ColorBlobMatcher.class.getSimpleName(), "Descriptor diff: "+dist+ " max: "+DESC_DIFF_THRESHOLD);
                     	
                     	if (dist < DESC_DIFF_THRESHOLD) {
                     		mContours.add(contour);

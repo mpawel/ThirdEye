@@ -37,6 +37,8 @@ import android.util.Log;
 
 public final class DescriptorHandler {
 	
+	
+	public final static int HISTOGRAM_BINS = 32;
 	public final static String BASE_URL = "http://stud.ics.p.lodz.pl/~pawelm/ve/";
 	public final static String URL_ADD = BASE_URL + "add.php";
 	public final static String URL_GET = BASE_URL + "get.php";
@@ -100,7 +102,7 @@ public final class DescriptorHandler {
 		Descriptor desc = new Descriptor();
 		
 		desc.name = str.get("name");
-		int[][] h = new int[3][256];
+		int[][] h = new int[3][HISTOGRAM_BINS];
 		String[][] cstr = new String[3][];
 		cstr[0]=str.get("rh").split(",");cstr[1]=str.get("gh").split(",");cstr[2]=str.get("bh").split(",");
 		
@@ -259,15 +261,18 @@ public final class DescriptorHandler {
 		Descriptor desc = new Descriptor();
 		
 		
-		int[] rh = new int[256];
-		int[] gh = new int[256];
-		int[] bh = new int[256];
+		int[] rh = new int[HISTOGRAM_BINS];
+		int[] gh = new int[HISTOGRAM_BINS];
+		int[] bh = new int[HISTOGRAM_BINS];
 		 
+		
+		
 		for (int i=0; i<img.width(); ++i) {
 			for(int j=0; j<img.height(); ++j) {
-				rh[((int)Math.floor(img.get(j, i)[0]))]++;
-				gh[((int)Math.floor(img.get(j, i)[1]))]++;
-				bh[((int)Math.floor(img.get(j, i)[2]))]++;
+				
+				rh[((int) Math.floor( img.get(j, i)[0]/(double)HISTOGRAM_BINS ) )]++;
+				gh[((int) Math.floor( img.get(j, i)[1]/(double)HISTOGRAM_BINS ) )]++;
+				bh[((int) Math.floor( img.get(j, i)[2]/(double)HISTOGRAM_BINS ) )]++;
 			}
 		}
 

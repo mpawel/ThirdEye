@@ -142,6 +142,8 @@ public class AndroidLearnerActivity extends Activity implements SensorEventListe
 					mitemView.setImageBitmap((Bitmap) DescriptorHandler.descriptors.get(0).img);
 					scaleImage();
 					
+					DescriptorDataset.training = DescriptorHandler.descriptors;
+					
 					mItemName.setText(DescriptorHandler.descriptors.get(0).name);
 					mSearchButt.setEnabled(true);
 

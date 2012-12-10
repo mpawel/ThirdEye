@@ -7,6 +7,8 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 public class DescriptorDataset {
+	
+	public static double NORMALIZATION_MAX = 1000.0d;
 
 	public static List<Descriptor> training = new ArrayList<Descriptor>();
 
@@ -20,7 +22,7 @@ public class DescriptorDataset {
 
 		double width = max - min;
 		for (int i = 0; i < h.length; ++i) {
-			h[i] = (int) ((((double) h[i] - min) / width) * 255);
+			h[i] = (int) ((((double) h[i] - min) / width) * NORMALIZATION_MAX);
 		}
 
 	}

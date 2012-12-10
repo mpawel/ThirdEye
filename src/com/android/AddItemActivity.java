@@ -153,11 +153,11 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 		if (contours.size() > 0) {
 			Rect boundingRect = Imgproc.boundingRect(contours.get(0));
 			
-
-			boundingRect.x -= ( (boundingRect.x - 10) >= 0 ? 10 : 0);
-			boundingRect.y -= ( (boundingRect.y - 10) >= 0 ? 10 : 0);
-			boundingRect.width += ( (boundingRect.width + 10) < mRgba.width() ? 10 : 0 );
-			boundingRect.height += ( (boundingRect.height + 10) < mRgba.height() ? 10 : 0 );
+			int margin = 3;
+			boundingRect.x -= ( (boundingRect.x - margin) >= 0 ? margin : 0);
+			boundingRect.y -= ( (boundingRect.y - margin) >= 0 ? margin : 0);
+			boundingRect.width += ( (boundingRect.width + 10) < mRgba.width() ? margin : 0 );
+			boundingRect.height += ( (boundingRect.height + 10) < mRgba.height() ? margin : 0 );
 
 	
 
