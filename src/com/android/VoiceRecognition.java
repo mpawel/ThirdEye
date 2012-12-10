@@ -45,7 +45,6 @@ public class VoiceRecognition extends Activity
 				Intent i = new Intent(getBaseContext(),AndroidLearnerActivity.class);
 				i.putExtra("item_name", selectedFromList);
 				
-				//TODO send image url also
 				
 				setResult(RESULT_OK, i);
 				finish();

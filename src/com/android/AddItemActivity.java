@@ -2,7 +2,9 @@ package com.android;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.http.message.BasicNameValuePair;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
@@ -22,6 +24,7 @@ import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -42,19 +45,14 @@ import android.widget.Toast;
 public class AddItemActivity extends Activity implements OnTouchListener, CvCameraViewListener {
 
 	private static final String TAG = "OCVSample::Activity";
-	
 
 	private Mat mRgba;
-	private Scalar mBlobColorRgba;
+
 	private Scalar mBlobColorHsv;
 	private ColorBlobDetector mDetector;
-	private Mat mSpectrum;
-	private Size SPECTRUM_SIZE;
 	private Scalar CONTOUR_COLOR;
 
 	private CameraBridgeViewBase mOpenCvCameraView;
-	
-	
 
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
 		@Override
@@ -85,8 +83,9 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 
 		mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
 		mOpenCvCameraView.setCvCameraViewListener(this);
-		
-		
+
+		DescriptorHandler.descriptors = new ArrayList<Descriptor>();
+
 		super.onCreate(savedInstanceState);
 	}
 
@@ -94,10 +93,7 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 
 		mRgba = new Mat(height, width, CvType.CV_8UC4);
 		mDetector = new ColorBlobDetector();
-		mSpectrum = new Mat();
-		mBlobColorRgba = new Scalar(255);
 		mBlobColorHsv = new Scalar(255);
-		SPECTRUM_SIZE = new Size(200, 64);
 		CONTOUR_COLOR = new Scalar(255, 0, 0, 255);
 	}
 
@@ -147,41 +143,37 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 		for (int i = 0; i < mBlobColorHsv.val.length; i++)
 			mBlobColorHsv.val[i] /= pointCount;
 
-		mBlobColorRgba = converScalarHsv2Rgba(mBlobColorHsv);
-
-		Log.i(TAG, "Touched rgba color: (" + mBlobColorRgba.val[0] + ", " + mBlobColorRgba.val[1] + ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
-
 		mDetector.setHsvColor(mBlobColorHsv);
 		mDetector.setTouchPoint(new Point(x, y));
-
-		Imgproc.resize(mDetector.getSpectrum(), mSpectrum, SPECTRUM_SIZE);
 
 		mDetector.process(mRgba);
 		final List<MatOfPoint> contours = mDetector.getContours();
 		Log.e(TAG, "Contours count: " + contours.size());
-		final Scalar blobRgba = new Scalar(255);
-		blobRgba.val[0]=this.mBlobColorRgba.val[0];
-		blobRgba.val[1]=this.mBlobColorRgba.val[1];
-		blobRgba.val[2]=this.mBlobColorRgba.val[2];
-		blobRgba.val[3]=this.mBlobColorRgba.val[3];
-		
-		
+
 		if (contours.size() > 0) {
 			Rect boundingRect = Imgproc.boundingRect(contours.get(0));
-			boundingRect.x-= boundingRect.x-5 >= 0 ? 5 : 0;
-			boundingRect.y-= boundingRect.y-5 >= 0 ? 5 : 0;
-			boundingRect.width+=boundingRect.width+5 < mRgba.width() ? 5 : 0;
-			boundingRect.height+=boundingRect.height+5 < mRgba.height() ? 5 : 0;
 			
-			Core.rectangle(mRgba, boundingRect.tl(), boundingRect.br(), this.mBlobColorRgba);
+
+			boundingRect.x -= ( (boundingRect.x - 10) >= 0 ? 10 : 0);
+			boundingRect.y -= ( (boundingRect.y - 10) >= 0 ? 10 : 0);
+			boundingRect.width += ( (boundingRect.width + 10) < mRgba.width() ? 10 : 0 );
+			boundingRect.height += ( (boundingRect.height + 10) < mRgba.height() ? 10 : 0 );
+
+	
 
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
 			LayoutInflater factory = LayoutInflater.from(AddItemActivity.this);
 			final ImageView view = (ImageView) factory.inflate(R.layout.item_preview, null);
-			final Mat subimg = mRgba.submat(boundingRect);
-			final Bitmap bmp = Bitmap.createBitmap((int) subimg.size().width, (int) subimg.size().height,Bitmap.Config.ARGB_8888);
-			Utils.matToBitmap(subimg, bmp);
+			final Mat subimg = new Mat();
+			mRgba.submat(boundingRect).copyTo(subimg);
+
+			Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
+			final Mat subimg_contour = mRgba.submat(boundingRect);
+
+			final Bitmap bmp = Bitmap.createBitmap((int) subimg_contour.size().width,
+					(int) subimg_contour.size().height, Bitmap.Config.ARGB_8888);
+			Utils.matToBitmap(subimg_contour, bmp);
 			view.setImageBitmap(bmp);
 
 			builder.setView(view);
@@ -189,49 +181,25 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 			builder.setTitle(R.string.add_ask);
 			builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int id) {
-					//create descriptor
-					//add to descriptors list
+					// create descriptor
+					// add to descriptors list
 					MatOfPoint contour = contours.get(0);
-					
-					
-					int[] rh = new int[256];
-					int[] gh = new int[256];
-					int[] bh = new int[256];
-					
-				
-					
-					for (int i=0; i<subimg.width(); ++i) {
-						for(int j=0; j<subimg.height(); ++j) {
-							rh[((int)Math.floor(subimg.get(j, i)[0]))]++;
-							gh[((int)Math.floor(subimg.get(j, i)[1]))]++;
-							bh[((int)Math.floor(subimg.get(j, i)[2]))]++;
-						}
-					}
-					
-					
-					Descriptor desc = new Descriptor();
-					desc.contour = contour;
-					desc.rh = rh;
-					desc.gh = gh;
-					desc.bh = bh;
-					desc.rgba = blobRgba;
-					desc.img = bmp;
+
 					
 
-					DescriptorDataset.normalizaHistogram(desc.rh);
-					DescriptorDataset.normalizaHistogram(desc.gh);
-					DescriptorDataset.normalizaHistogram(desc.bh);
-					
-					
-					DescriptorHandler.descriptors.add(desc);
+					DescriptorHandler.descriptors.add(DescriptorHandler
+							.createDescriptor(subimg, contour, mBlobColorHsv));
+
 					
 					dialog.dismiss();
 					subimg.release();
+					subimg_contour.release();
 				}
 			});
 			builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int id) {
 					subimg.release();
+					subimg_contour.release();
 					dialog.dismiss();
 				}
 			});
@@ -239,23 +207,13 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 			AlertDialog dialog = builder.create();
 
 			dialog.show();
-			
-			
+
 		}
-		
-		
+
 		touchedRegionRgba.release();
 		touchedRegionHsv.release();
 
 		return false; // don't need subsequent touch events
-	}
-
-	private Scalar converScalarHsv2Rgba(Scalar hsvColor) {
-		Mat pointMatRgba = new Mat();
-		Mat pointMatHsv = new Mat(1, 1, CvType.CV_8UC3, hsvColor);
-		Imgproc.cvtColor(pointMatHsv, pointMatRgba, Imgproc.COLOR_HSV2RGB_FULL, 4);
-
-		return new Scalar(pointMatRgba.get(0, 0));
 	}
 
 	@Override
@@ -295,49 +253,65 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 			return true;
 		case R.id.menu_abort:
 			// return empty result
+			Intent intent = new Intent(getBaseContext(), AndroidLearnerActivity.class);
+			intent.putExtra("status", "bad");
+
+			setResult(RESULT_CANCELED, intent);
 			finish();
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
 	}
-	
-	
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		switch(requestCode)
-		{
-		case AndroidLearnerActivity.VOICE_CHOOSER :
-			if ( resultCode == RESULT_OK )
+		switch (requestCode) {
+		case AndroidLearnerActivity.VOICE_CHOOSER:
+			Intent intent = new Intent(getBaseContext(), AndroidLearnerActivity.class);
+			if (resultCode == RESULT_OK && data != null && data.getExtras().get("item_name") != null)
 			{
-				if (data != null && data.getExtras().get("item_name") != null ) {
-					String name = (String) data.getExtras().get("item_name");
-					for ( Descriptor d : DescriptorHandler.descriptors) {
-						d.name = name;
+
+				ProgressDialog progress = ProgressDialog.show(this, this.getString(R.string.save_object), "");
+
+				progress.show();
+				progress.setMax(DescriptorHandler.descriptors.size());
+				int prog = 0;
+
+				List<String> responses = new ArrayList<String>();
+				String name = (String) data.getExtras().get("item_name");
+
+				for (Descriptor d : DescriptorHandler.descriptors) {
+					d.name = name;
+					Map<String, String> m = DescriptorHandler.toString(d);
+					List<BasicNameValuePair> desc = new ArrayList<BasicNameValuePair>();
+					for (Map.Entry<String, String> e : m.entrySet()) {
+						desc.add(new BasicNameValuePair(e.getKey(), e.getValue()));
 					}
-					
-					//add to database
-					
+					responses.add(DescriptorHandler.sendPost(desc));
+					progress.setProgress(++prog);
 				}
-				else
-				{
-					Toast.makeText(this, R.string.none_selected, Toast.LENGTH_SHORT).show();
-				} 
+
+				progress.dismiss();
+				intent.putExtra("status", responses.get(0));
+				setResult(RESULT_OK, intent);
+				finish();
 
 			}
 			else
 			{
 				Toast.makeText(this, R.string.none_selected, Toast.LENGTH_SHORT).show();
 			}
-				
-			
-			
-		default : break;
-			
+
+			intent.putExtra("status", "bad");
+			setResult(RESULT_CANCELED, intent);
+			finish();
+
+		default:
+			break;
+
 		}
 		super.onActivityResult(requestCode, resultCode, data);
 	}
-	
 
 }

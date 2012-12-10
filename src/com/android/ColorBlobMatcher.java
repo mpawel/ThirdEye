@@ -10,10 +10,17 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-public class ColorBlobDetector {
+import android.util.Log;
+
+public class ColorBlobMatcher {
+	
+	
+	
+	
     // Lower and Upper bounds for range checking in HSV color space
     private Scalar mLowerBound = new Scalar(0);
     private Scalar mUpperBound = new Scalar(0);
@@ -29,7 +36,9 @@ public class ColorBlobDetector {
     Mat mMask = new Mat();
     Mat mDilatedMask = new Mat();
     Mat mHierarchy = new Mat();
-	private Point touchPoint;
+	public static  double SHAPE_DIFF_THRESHOLD = 0.2d;
+	public static double DESC_DIFF_THRESHOLD = (3.0d*255.0d*256.0d)*0.05d;
+	
 
     public void setColorRadius(Scalar radius) {
         mColorRadius = radius;
@@ -59,6 +68,8 @@ public class ColorBlobDetector {
     }
 
     public void process(Mat rgbaImage) {
+    	
+    	
         Imgproc.pyrDown(rgbaImage, mPyrDownMat);
         Imgproc.pyrDown(mPyrDownMat, mPyrDownMat);
         Imgproc.cvtColor(mPyrDownMat, mHsvMat, Imgproc.COLOR_RGB2HSV_FULL);
@@ -71,37 +82,55 @@ public class ColorBlobDetector {
         Imgproc.findContours(mDilatedMask, contours, mHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
         // Find max contour area
-        double maxArea = 0;
-        Iterator<MatOfPoint> each = contours.iterator();
-        while (each.hasNext()) {
-            MatOfPoint wrapper = each.next();
-            double area = Imgproc.contourArea(wrapper);
-            if (area > maxArea)
-                maxArea = area;
-        }
 
-        // Filter contours by area and resize to fit the original image size
+        Iterator<MatOfPoint> each = contours.iterator();
+
         mContours.clear();
-        each = contours.iterator();
         
-        while (each.hasNext()) {
+    	Log.d(ColorBlobMatcher.class.getSimpleName(), "contours:"+contours.size());
+        
+        while (each.hasNext())
+        {
             MatOfPoint contour = each.next();
-            if (Imgproc.contourArea(contour) > mMinContourArea*maxArea) {
-                Core.multiply(contour, new Scalar(4,4), contour);
-                MatOfPoint2f  mat2f = new MatOfPoint2f();
-                mat2f.fromArray(contour.toArray());
-                 if ( Imgproc.pointPolygonTest( mat2f, touchPoint, false) > 0.0d ){
-                	 mContours.add(contour);
-                 }
-                 mat2f.release();
+            Core.multiply(contour, new Scalar(4,4), contour);
+            
+            Rect boundingRect = Imgproc.boundingRect(contour);
+            Mat subimg = rgbaImage.submat(boundingRect);
+//            Mat subimghsv = new Mat();
+//        	Imgproc.cvtColor(subimg, subimghsv, Imgproc.COLOR_RGB2HSV_FULL);
+//
+//        	Scalar blobColorHsv = Core.sumElems(subimghsv);
+//        	int pointCount = boundingRect.width * boundingRect.height;
+//        	for (int i = 0; i < blobColorHsv.val.length; i++)
+//        		blobColorHsv.val[i] /= pointCount;
+            	
+        	Descriptor a = DescriptorHandler.createDescriptor(subimg, contour, null);
+
+            double area = Imgproc.contourArea(contour);
+            if ( area > rgbaImage.width()*rgbaImage.height()*0.01 &&  area < rgbaImage.width()*rgbaImage.height()*0.8 )
+            {
+                for ( Descriptor d : DescriptorDataset.training)
+                {
+                	double match = Imgproc.matchShapes(contour, d.contour, Imgproc.CV_CONTOURS_MATCH_I3, 0);
+                	
+                	if ( match < SHAPE_DIFF_THRESHOLD  )
+                	{
+                		Log.d(ColorBlobMatcher.class.getSimpleName(), "contourMatch:"+match);
+                		
+                    	double dist = DescriptorDataset.getMinDist(a);
+                    	
+                    	Log.d(ColorBlobMatcher.class.getSimpleName(), "Descriptor diff: "+dist);
+                    	
+                    	if (dist < DESC_DIFF_THRESHOLD) {
+                    		mContours.add(contour);
+                    	}
+                		
+                	}
+                }
             }
         }
     }
     
-    
-    public void setTouchPoint(Point touchPoint) {
-		this.touchPoint = touchPoint;
-	}
 
     public List<MatOfPoint> getContours() {
         return mContours;

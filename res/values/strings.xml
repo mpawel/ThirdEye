@@ -11,4 +11,6 @@
     <string name="add_item_menu_ok">save</string>
     <string name="add_item_menu_abort">abort</string>
     <string name="loading_object">loading object...</string>
+    <string name="save_object">sending object information...</string>
+    <string name="loading_error">error while loading item</string>
 </resources>
