@@ -28,6 +28,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -46,8 +47,9 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 
 	private static final String TAG = "OCVSample::Activity";
 
+	public AddItemActivity mThis;
+	
 	private Mat mRgba;
-
 	private Scalar mBlobColorHsv;
 	private ColorBlobDetector mDetector;
 	private Scalar CONTOUR_COLOR;
@@ -76,6 +78,9 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.i(TAG, "called onCreate");
 		super.onCreate(savedInstanceState);
+		
+		mThis = this;
+		
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -272,46 +277,75 @@ public class AddItemActivity extends Activity implements OnTouchListener, CvCame
 			if (resultCode == RESULT_OK && data != null && data.getExtras().get("item_name") != null)
 			{
 
-				ProgressDialog progress = ProgressDialog.show(this, this.getString(R.string.save_object), "");
-
-				progress.show();
-				progress.setMax(DescriptorHandler.descriptors.size());
-				int prog = 0;
-
-				List<String> responses = new ArrayList<String>();
-				String name = (String) data.getExtras().get("item_name");
-
-				for (Descriptor d : DescriptorHandler.descriptors) {
-					d.name = name;
-					Map<String, String> m = DescriptorHandler.toString(d);
-					List<BasicNameValuePair> desc = new ArrayList<BasicNameValuePair>();
-					for (Map.Entry<String, String> e : m.entrySet()) {
-						desc.add(new BasicNameValuePair(e.getKey(), e.getValue()));
-					}
-					responses.add(DescriptorHandler.sendPost(desc));
-					progress.setProgress(++prog);
-				}
-
-				progress.dismiss();
-				intent.putExtra("status", responses.get(0));
-				setResult(RESULT_OK, intent);
-				finish();
+	
+				new DBSaver().execute((String)data.getExtras().get("item_name"));
+			
 
 			}
 			else
 			{
 				Toast.makeText(this, R.string.none_selected, Toast.LENGTH_SHORT).show();
+				intent.putExtra("status", "bad");
+				setResult(RESULT_CANCELED, intent);
+				finish();
 			}
 
-			intent.putExtra("status", "bad");
-			setResult(RESULT_CANCELED, intent);
-			finish();
+			
 
 		default:
 			break;
 
 		}
 		super.onActivityResult(requestCode, resultCode, data);
+	}
+	
+	
+	protected class DBSaver extends AsyncTask<String, Void, List<String>> {
+		
+		private ProgressDialog progress;
+
+		@Override
+		protected void onPreExecute() {
+			progress = new ProgressDialog(mThis);
+			progress.setMessage(mThis.getText(R.string.save_object));
+			progress.setCancelable(false);
+			progress.show();
+			
+			super.onPreExecute();
+		}
+
+		@Override
+		protected List<String> doInBackground(String... params) {
+			List<String> responses = new ArrayList<String>();
+			
+
+			for (Descriptor d : DescriptorHandler.descriptors) {
+				d.name = params[0];
+				Map<String, String> m = DescriptorHandler.toString(d);
+				List<BasicNameValuePair> desc = new ArrayList<BasicNameValuePair>();
+				for (Map.Entry<String, String> e : m.entrySet()) {
+					desc.add(new BasicNameValuePair(e.getKey(), e.getValue()));
+				}
+				responses.add(DescriptorHandler.sendPost(desc));
+	
+			}
+			return responses;
+		}
+		
+		@Override
+		protected void onPostExecute(List<String> result) {
+			
+			
+			Intent intent = new Intent(getBaseContext(), AndroidLearnerActivity.class);
+			intent.putExtra("status", result.get(0));
+			setResult(RESULT_OK, intent);
+			finish();
+			
+			progress.dismiss();
+
+			super.onPostExecute(result);
+		}
+		
 	}
 
 }

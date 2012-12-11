@@ -26,6 +26,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
@@ -266,13 +267,17 @@ public final class DescriptorHandler {
 		int[] bh = new int[HISTOGRAM_BINS];
 		 
 		
-		
-		for (int i=0; i<img.width(); ++i) {
-			for(int j=0; j<img.height(); ++j) {
-				
-				rh[((int) Math.floor( img.get(j, i)[0]/(double)HISTOGRAM_BINS ) )]++;
-				gh[((int) Math.floor( img.get(j, i)[1]/(double)HISTOGRAM_BINS ) )]++;
-				bh[((int) Math.floor( img.get(j, i)[2]/(double)HISTOGRAM_BINS ) )]++;
+		Point p = new Point();
+		MatOfPoint2f  mat2f = new MatOfPoint2f();
+		for (int i=0; i<img.width(); i+=2) {
+			for(int j=(i+1)%2; j<img.height(); j+=1) {
+				p.x=i; p.y=j;
+                mat2f.fromArray(contour.toArray());
+				if (Imgproc.pointPolygonTest(mat2f, p, false) >= 0) {
+					rh[((int) Math.floor( img.get(j, i)[0]/(double)HISTOGRAM_BINS ) )]++;
+					gh[((int) Math.floor( img.get(j, i)[1]/(double)HISTOGRAM_BINS ) )]++;
+					bh[((int) Math.floor( img.get(j, i)[2]/(double)HISTOGRAM_BINS ) )]++;
+				}
 			}
 		}
 

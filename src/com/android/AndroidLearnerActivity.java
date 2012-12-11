@@ -1,11 +1,14 @@
 package com.android;
 
+import java.util.concurrent.ExecutionException;
+
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
@@ -16,6 +19,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Address;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -104,29 +108,18 @@ public class AndroidLearnerActivity extends Activity implements SensorEventListe
 		case VOICE_CHOOSER:
 			if (resultCode == RESULT_OK && data != null && data.getExtras().get("item_name") != null) {
 
-				String name = (String) data.getExtras().get("item_name");
+				final String name = (String) data.getExtras().get("item_name");
 
-				ProgressDialog progress = ProgressDialog.show(mThis, "", mThis.getString(R.string.loading_object));
 
-				String result = DescriptorHandler.get(name);
-
-				progress.dismiss();
-
-				DescriptorDataset.training = DescriptorHandler.descriptors;
+				String result = "";
+				
+				DBLoader loader = new DBLoader();
+				loader.execute(name);
+				
 
 				
-				if ( ! result.contains("ok") )
-					Toast.makeText(mThis, this.getString(R.string.loading_error), Toast.LENGTH_SHORT).show();
-				else 
-				{
-					mitemView.setImageBitmap((Bitmap) DescriptorDataset.training.get(0).img);
-					scaleImage();
-					mItemName.setText(name);
-					mSearchButt.setEnabled(true);
-				}
-
-				
-			} else 
+			}
+			else 
 			{
 				mSearchButt.setEnabled(false);
 				mItemName.setText(R.string.none_selected);
@@ -265,6 +258,47 @@ public class AndroidLearnerActivity extends Activity implements SensorEventListe
 	{
 	    float density = getApplicationContext().getResources().getDisplayMetrics().density;
 	    return Math.round((float)dp * density);
+	}
+	
+	protected class DBLoader extends AsyncTask<String, Void, String> {
+		
+		private ProgressDialog progress;
+
+		@Override
+		protected void onPreExecute() {
+			progress = new ProgressDialog(mThis);
+			progress.setMessage(mThis.getText(R.string.loading_object));
+			progress.setCancelable(false);
+			progress.show();
+			
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(String... params) {
+			return DescriptorHandler.get(params[0]);
+		}
+		
+		@Override
+		protected void onPostExecute(String result) {
+			DescriptorDataset.training = DescriptorHandler.descriptors;
+
+			
+			if ( ! result.contains("ok") )
+				Toast.makeText(mThis, mThis.getString(R.string.loading_error), Toast.LENGTH_SHORT).show();
+			else 
+			{
+				mitemView.setImageBitmap((Bitmap) DescriptorDataset.training.get(0).img);
+				scaleImage();
+				mItemName.setText(DescriptorDataset.training.get(0).name);
+				mSearchButt.setEnabled(true);
+			}
+			
+			progress.dismiss();
+
+			super.onPostExecute(result);
+		}
+		
 	}
 	
 }

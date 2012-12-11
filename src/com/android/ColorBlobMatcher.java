@@ -36,8 +36,8 @@ public class ColorBlobMatcher {
     Mat mMask = new Mat();
     Mat mDilatedMask = new Mat();
     Mat mHierarchy = new Mat();
-	public static  double SHAPE_DIFF_THRESHOLD = 0.2d;
-	public static double DESC_DIFF_THRESHOLD = (3.0d*DescriptorDataset.NORMALIZATION_MAX*(double)DescriptorHandler.HISTOGRAM_BINS)*0.05d;
+	public static  double SHAPE_DIFF_THRESHOLD = 0.18d;
+	public static double DESC_DIFF_THRESHOLD = (3.0d*DescriptorDataset.NORMALIZATION_MAX*(double)DescriptorHandler.HISTOGRAM_BINS)*0.03d;
 	
 
     public void setColorRadius(Scalar radius) {

@@ -32,6 +32,8 @@ import android.widget.Toast;
 public class MatchItemActivity extends Activity implements CvCameraViewListener {
 	private static final String TAG = "OCVSample::Activity";
 
+	private int dropframe = 0;
+	
 	private Mat mRgba;
 	private ColorBlobMatcher mDetector;
 	private Scalar CONTOUR_COLOR;
@@ -108,11 +110,16 @@ public class MatchItemActivity extends Activity implements CvCameraViewListener 
 
 		inputFrame.copyTo(mRgba);
 
-		mDetector.process(mRgba);
-		List<MatOfPoint> contours = mDetector.getContours();
+		
+		if ( dropframe%3 == 0)
+		{
+			mDetector.process(mRgba);
+			List<MatOfPoint> contours = mDetector.getContours();
 
-		Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
-
+			Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
+			
+		}
+		dropframe = (dropframe+1) %1000;
 		return mRgba;
 	}
 
